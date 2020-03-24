@@ -1,3 +1,6 @@
+variables:
+    apiappservicename: 'ENTERAPPSERIVCENAME'
+
 trigger:
   - master
   
@@ -33,11 +36,11 @@ stages:
         arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
         zipAfterPublish: True
       
-      # this code takes all the files in $(Build.ArtifactStagingDirectory) and uploads them as an artifact of your build.
-      - task: PublishBuildArtifacts@1
-        inputs:
-          pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-          artifactName: 'apiartifact'
+     # this code takes all the files in $(Build.ArtifactStagingDirectory) and uploads them as an artifact of your build.
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+        artifactName: 'apiartifact'
 
 
 - stage: 'Deploy'
@@ -52,11 +55,11 @@ stages:
         buildType: 'current'
         artifactName: 'apiartifact'
         targetPath: '$(Pipeline.Workspace)'
-        
+
     - task: AzureRmWebAppDeployment@4
       inputs:
         ConnectionType: 'AzureRM'
         azureSubscription: 'AzureServiceConnection'
         appType: 'webApp'
-        WebAppName: 'iu32uyi44-site'
+        WebAppName: '$(apiappservicename)'
         packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
