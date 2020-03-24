@@ -1,49 +1,62 @@
-
-variables:
-  prefix: 'something'
-
-stages:
-
-      
-  - stage: ProvisionEnvironment
-    displayName: Provision Env with Terraform
-    variables:
-      - group: 'Terraform'
-      
-
-    jobs:
-    - job: TransformConfiguration
-      pool:      
-        vmImage: 'Ubuntu-16.04'
-      steps:
-      - task: qetza.replacetokens.replacetokens-task.replacetokens@3
-        displayName: 'Replace tokens in **/*.tfvars'
-        inputs:
-          rootDirectory: ./env         
-          targetFiles: '**/*.tfvars'
-
-
-      - script: |
-          terraform init \
-            -backend-config="resource_group_name=$(tf-backend-resource-group)" \
-            -backend-config="storage_account_name=$(tf-backend-storage-account)" \
-            -backend-config="container_name=$(tf-backend-container-name)" \
-            -backend-config="key=$(tf-backend-state-file-name)" \
-            -backend-config="access_key=$(tf-backend-state-file-key)"
-    
-        workingDirectory: ./env
-        displayName: 'Terraform init'
+trigger:
+  - master
   
-      - script: |
-          terraform plan -target azurerm_app_service.website -var-file="terraform.tfvars"
-          terraform apply -target azurerm_app_service.website -var-file="terraform.tfvars"  -auto-approve
-      
-        workingDirectory: ./env
-        displayName: 'Create App Service'
+stages:
+- stage: 'BuildAPI'
+  displayName: 'Build API'
+  variables:
+    solution: '**/DemoAPI.sln'
+    buildPlatform: 'Any CPU'
+    buildConfiguration: 'Release'
+  jobs:
+  - job: Build
+    pool:
+        vmImage: 'windows-latest'
+    steps:
+    - task: NuGetToolInstaller@1
 
-      - script: |
-          terraform plan -var-file="terraform.tfvars"
-          terraform apply -var-file="terraform.tfvars"  -auto-approve
-    
-        workingDirectory: ./env
-        displayName: 'Create Everything Else'
+    - task: NuGetCommand@2
+      inputs:
+        restoreSolution: '**/DemoAPI.sln'
+
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: build
+        projects: '**/DemoAPI.csproj'
+        arguments: '--configuration Release' # Update this to match your need
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: publish
+        publishWebProjects: True
+        arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: True
+      
+      # this code takes all the files in $(Build.ArtifactStagingDirectory) and uploads them as an artifact of your build.
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+          artifactName: 'apiartifact'
+
+
+- stage: 'Deploy'
+  displayName: 'Deploy to App Service'
+  jobs:
+  - job: Deploy_to_app_service
+    pool:
+        vmImage: 'windows-latest'
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'apiartifact'
+        targetPath: '$(Pipeline.Workspace)'
+        
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'AzureServiceConnection'
+        appType: 'webApp'
+        WebAppName: 'iu32uyi44-site'
+        packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
