@@ -38,3 +38,16 @@ resource "azurerm_subnet" "dbprivatelink" {
   enforce_private_link_service_network_policies   = true 
   enforce_private_link_endpoint_network_policies  = true
 }
+
+
+resource "azurerm_network_security_group" "vnetint" {
+  name                = "vnetintsg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+}
+
+
+resource "azurerm_subnet_network_security_group_association" "vnetint" {
+  subnet_id                 = azurerm_subnet.vnetint.id
+  network_security_group_id = azurerm_network_security_group.vnetint.id
+}

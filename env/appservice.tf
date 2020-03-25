@@ -29,6 +29,7 @@ resource "azurerm_app_service" "api" {
     "WEBSITE_VNET_ROUTE_ALL"  = "1"
     "CosmosEndPointUri"       = azurerm_cosmosdb_account.main.endpoint
     "CosmosPrimaryKey"        = azurerm_cosmosdb_account.main.primary_master_key
+    "ExternalEndpoint"  = "https://api.ipify.org?format=json"
   }
 }
 
