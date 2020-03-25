@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,6 +32,7 @@ namespace DemoAPI
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
             });
+            services.AddTransient<CosmosClient>(s => new CosmosClient(Configuration["CosmosEndPointUri"], Configuration["CosmosPrimaryKey"]));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
