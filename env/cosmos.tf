@@ -25,16 +25,16 @@ resource "azurerm_cosmosdb_sql_database" "main" {
   throughput          = 400
 }
 
-resource "azurerm_private_endpoint" "dbendpoint" {
-  name                = "dbendpoint-${var.resource_group_name}-${random_id.main.dec}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = azurerm_subnet.dbprivatelink.id
-
-  private_service_connection {
-    is_manual_connection       = false
-    name                       = "connection-${var.resource_group_name}-${random_id.main.dec}"
-    private_connection_resource_id = azurerm_cosmosdb_account.main.id
-    subresource_names          = ["SQL"]
-  }
-}
+#resource "azurerm_private_endpoint" "dbendpoint" {
+#  name                = "dbendpoint-${var.resource_group_name}-${random_id.main.dec}"
+#  location            = azurerm_resource_group.main.location
+#  resource_group_name = azurerm_resource_group.main.name
+#  subnet_id           = azurerm_subnet.dbprivatelink.id
+#
+#  private_service_connection {
+#    is_manual_connection       = false
+#    name                       = "connection-${var.resource_group_name}-${random_id.main.dec}"
+#    private_connection_resource_id = azurerm_cosmosdb_account.main.id
+#    subresource_names          = ["SQL"]
+#  }
+#}
