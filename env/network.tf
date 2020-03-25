@@ -25,5 +25,16 @@ resource "azurerm_subnet" "apiprivatelink" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefix       = "10.0.2.0/24"
+  enforce_private_link_service_network_policies  = true 
+  enforce_private_link_endpoint_network_policies  = true
+}
 
+
+resource "azurerm_subnet" "dbprivatelink" {
+  name                 = "dbprivatelnk"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefix       = "10.0.3.0/24"
+  enforce_private_link_service_network_policies   = true 
+  enforce_private_link_endpoint_network_policies  = true
 }

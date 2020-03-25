@@ -6,7 +6,7 @@ resource "azurerm_app_service_plan" "api" {
   kind                = "Windows"
 
   sku {
-    tier = "Premium"
+    tier = "PremiumV2"
     size = "P2v2"
   }
 }

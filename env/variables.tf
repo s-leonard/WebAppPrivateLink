@@ -4,7 +4,7 @@
 #variable "azure_tenant_id" {}
 
 variable resource_group_name {
-    default = "pvtwebapp"
+    default = "pvtpp"
 }
 
 variable location {

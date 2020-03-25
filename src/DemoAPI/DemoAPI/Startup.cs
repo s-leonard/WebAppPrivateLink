@@ -33,6 +33,7 @@ namespace DemoAPI
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
             });
             services.AddTransient<CosmosClient>(s => new CosmosClient(Configuration["CosmosEndPointUri"], Configuration["CosmosPrimaryKey"]));
+            services.AddTransient<IConfiguration>(c => Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
