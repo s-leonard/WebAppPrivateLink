@@ -1,3 +1,3 @@
-# Automated Continous Deployment of our Website and API
+# Automated Continous Deployments of our Website and API
 
 ....

@@ -1,4 +1,4 @@
-# Creation of our Spokes Infrastructure
+# Creation of our Spoke Infrastructure
 
 Our spoke will contain:
 - An Application gateway acting as a WAF, sitting within its own subnet that routes traffic to our website
