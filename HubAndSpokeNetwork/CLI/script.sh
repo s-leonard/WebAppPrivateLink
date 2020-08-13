@@ -18,8 +18,8 @@ VNET_SPOKE_DEV=devvnet
 VNET_SPOKE_PROD=prodvnet
 
 VNET_HUB_IPRANGE=10.0.0.0/16
-VNET_SPOKE_IPRANGE=10.1.0.0/16
-VNET_SPOKE_PROD_IPRANGE=10.2.0.0/16
+VNET_SPOKE_IPRANGE_DEV=10.1.0.0/16
+VNET_SPOKE_IPRANGE_PROD=10.2.0.0/16
 
 APPGATEWAY_SUBNET_DEV=appgatewaydev
 APPGATEWAY_SUBNET_PROD=appgatewayprod
@@ -34,7 +34,7 @@ WEB_SUBNET_IPRANGE_PROD=10.2.1.0/24
 API_SUBNET_DEV=apidev
 API_SUBNET_PROD=apiprod
 API_SUBNET_IPRANGE_DEV=10.1.2.0/24
-API_SUBNET_IPRANGE_PROD=10.1.2.0/24
+API_SUBNET_IPRANGE_PROD=10.2.2.0/24
 
 #FIREWALL_SUBNET=firewall
 #FIREWALL_SUBNET_IPRANGE=10.0.0.0/24
@@ -50,8 +50,8 @@ az group create -n $RG_SPOKE_DEV -l $LOCATION
 az group create -n $RG_SPOKE_PROD -l $LOCATION
 
 az network vnet create -n $VNET_HUB -g $RG_HUB --address-prefixes $VNET_HUB_IPRANGE
-az network vnet create -n $VNET_SPOKE_DEV -g $RG_SPOKE --address-prefixes $VNET_SPOKE_IPRANGE
-az network vnet create -n $VNET_SPOKE_PROD -g $RG_SPOKE --address-prefixes $VNET_SPOKE_PROD_IPRANGE
+az network vnet create -n $VNET_SPOKE_DEV -g $RG_SPOKE_DEV --address-prefixes $VNET_SPOKE_IPRANGE_DEV
+az network vnet create -n $VNET_SPOKE_PROD -g $RG_SPOKE_PROD --address-prefixes $VNET_SPOKE_IPRANGE_PROD
 
 #Create the Subnets in each vnet
 az network vnet subnet create -n $APPGATEWAY_SUBNET_DEV -g $RG_SPOKE_DEV --address-prefixes $APPGATEWAY_SUBNET_IPRANGE_DEV --vnet-name $VNET_SPOKE_DEV
@@ -66,14 +66,14 @@ az network vnet subnet create -n $API_SUBNET_PROD -g $RG_SPOKE_PROD --address-pr
 
 #Peer the Vnets
 HUBID=$(az network vnet show -g $RG_HUB -n $VNET_HUB --query id -o tsv)
-SPOKEID_DEV=$(az network vnet show -g $RG_SPOKE -n $VNET_SPOKE --query id -o tsv)
-SPOKEID_PROD=$(az network vnet show -g $RG_SPOKE -n $VNET_SPOKE --query id -o tsv)
+SPOKEID_DEV=$(az network vnet show -g $RG_SPOKE_DEV -n $VNET_SPOKE_DEV --query id -o tsv)
+SPOKEID_PROD=$(az network vnet show -g $RG_SPOKE_PROD -n $VNET_SPOKE_PROD --query id -o tsv)
 
 az network vnet peering create -g $RG_HUB -n $HUB_TO_SPOKE_VNET_PEER_DEV --vnet-name $VNET_HUB --remote-vnet $SPOKEID_DEV --allow-vnet-access
-az network vnet peering create -g $RG_HUB -n $HUB_TO_SPOKE_VNET_PEER_DEV --vnet-name $VNET_HUB --remote-vnet $SPOKEID_PROD --allow-vnet-access
+az network vnet peering create -g $RG_HUB -n $HUB_TO_SPOKE_VNET_PEER_PROD --vnet-name $VNET_HUB --remote-vnet $SPOKEID_PROD --allow-vnet-access
 
-az network vnet peering create -g $RG_SPOKE -n $SPOKE_TO_HUB_VNET_PEER_DEV --vnet-name $VNET_SPOKE_DEV --remote-vnet $HUBID --allow-vnet-access
-az network vnet peering create -g $RG_SPOKE -n $SPOKE_TO_HUB_VNET_PEER_PROD --vnet-name $VNET_SPOKE_PROD --remote-vnet $HUBID --allow-vnet-access
+az network vnet peering create -g $RG_SPOKE_DEV -n $SPOKE_TO_HUB_VNET_PEER_DEV --vnet-name $VNET_SPOKE_DEV --remote-vnet $HUBID --allow-vnet-access
+az network vnet peering create -g $RG_SPOKE_PROD -n $SPOKE_TO_HUB_VNET_PEER_PROD --vnet-name $VNET_SPOKE_PROD --remote-vnet $HUBID --allow-vnet-access
 
 ###########################################
 # Hub Network
