@@ -6,13 +6,16 @@ az extension add --name azure-firewall
 # Global Variables
 ###########################################
 LOCATION=centralus
-PREFIX=WS$(date +%s%N | md5sum | cut -c1-6)
+PREFIX=ws$(date +%s%N | md5sum | cut -c1-6)
 SUBID=$(az account list --query "[?isDefault].id" -o tsv)
+ADO_ACCOUNTNAME={AzureDevOps Account name}
+ADO_PERSONALACCESSTOKEN={AzureDevOps personal access token}
 
 ###########################################
 # Hub & Spoke Networks
 ###########################################
 
+RG_DEVOPSAGENT=devopsagent
 RG_HUB=hub
 RG_SPOKE_DEV=devspoke
 RG_SPOKE_PROD=prodspoke
@@ -136,8 +139,16 @@ az network vnet subnet update -g $RG_SPOKE_PROD --vnet-name $VNET_SPOKE_PROD --n
 az network vnet subnet update -g $RG_SPOKE_PROD --vnet-name $VNET_SPOKE_PROD --name $API_SUBNET_PROD --route-table $FWROUTE_TABLE_NAME
 
 ## Azure Deplopyment Agent
-
-
+az group create --name $RG_DEVOPSAGENT --location $LOCATION
+az deployment group create -g $RG_DEVOPSAGENT --name agentdeployment \
+  --template-uri "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-vsts-agent/azuredeploy.json" \
+  --parameters  publicIPDnsName=$(echo $PREFIX)agent \
+                vmAdminUser=adminuser \
+                vmSize=Standard_D1_v2 \
+                vstsAccount=$ADO_ACCOUNTNAME \
+                vstsPersonalAccessToken=$ADO_PERSONALACCESSTOKEN \
+                vstsAgentCount=1 \
+                vstsPoolName=Default
 
 ###########################################
 # Pre-Prod Spoke
