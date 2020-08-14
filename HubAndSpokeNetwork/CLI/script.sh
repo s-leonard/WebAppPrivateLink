@@ -10,6 +10,8 @@ PREFIX=ws$(date +%s%N | md5sum | cut -c1-6)
 SUBID=$(az account list --query "[?isDefault].id" -o tsv)
 ADO_ACCOUNTNAME={AzureDevOps Account name}
 ADO_PERSONALACCESSTOKEN={AzureDevOps personal access token}
+ADO_VMADMINUSER=adminuser
+ADO_VMADMINPASSWORD={ADO Agent VM admin password}
 
 ###########################################
 # Hub & Spoke Networks
@@ -143,7 +145,9 @@ az group create --name $RG_DEVOPSAGENT --location $LOCATION
 az deployment group create -g $RG_DEVOPSAGENT --name agentdeployment \
   --template-uri "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-vsts-agent/azuredeploy.json" \
   --parameters  publicIPDnsName=$(echo $PREFIX)agent \
-                vmAdminUser=adminuser \
+                _artifactsLocation="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-vsts-agent/" \
+                vmAdminUser=$ADO_VMADMINUSER \
+                vmAdminPassword=$ADO_VMADMINPASSWORD \
                 vmSize=Standard_D1_v2 \
                 vstsAccount=$ADO_ACCOUNTNAME \
                 vstsPersonalAccessToken=$ADO_PERSONALACCESSTOKEN \
