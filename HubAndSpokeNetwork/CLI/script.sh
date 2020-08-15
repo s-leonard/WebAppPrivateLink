@@ -152,6 +152,7 @@ az deployment group create -g $RG_DEVOPSAGENT --name agentdeployment \
                 vstsAccount=$ADO_ACCOUNTNAME \
                 vstsPersonalAccessToken=$ADO_PERSONALACCESSTOKEN \
                 vstsAgentCount=1 \
+                modules="{}" \
                 vstsPoolName=Default
 
 ###########################################
