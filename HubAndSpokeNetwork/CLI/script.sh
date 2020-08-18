@@ -25,34 +25,40 @@ VNET_HUB=hubvnet
 VNET_SPOKE_DEV=devvnet
 VNET_SPOKE_PROD=prodvnet
 
-VNET_HUB_IPRANGE=10.0.0.0/16
-VNET_SPOKE_IPRANGE_DEV=10.1.0.0/16
-VNET_SPOKE_IPRANGE_PROD=10.2.0.0/16
+VNET_HUB_IPRANGE=10.1.0.0/16
+VNET_SPOKE_IPRANGE_DEV=10.2.0.0/16
+VNET_SPOKE_IPRANGE_PROD=10.3.0.0/16
 
 APPGATEWAY_SUBNET_DEV=appgatewaydev
 APPGATEWAY_SUBNET_PROD=appgatewayprod
-APPGATEWAY_SUBNET_IPRANGE_DEV=10.1.0.0/24
-APPGATEWAY_SUBNET_IPRANGE_PROD=10.2.0.0/24
+APPGATEWAY_SUBNET_IPRANGE_DEV=10.2.0.0/24
+APPGATEWAY_SUBNET_IPRANGE_PROD=10.3.0.0/24
 
 WEB_SUBNET_DEV=webdev
 WEB_SUBNET_PROD=webprod
-WEB_SUBNET_IPRANGE_DEV=10.1.1.0/24
-WEB_SUBNET_IPRANGE_PROD=10.2.1.0/24
+WEB_SUBNET_IPRANGE_DEV=10.2.1.0/24
+WEB_SUBNET_IPRANGE_PROD=10.3.1.0/24
 
 API_SUBNET_DEV=apidev
 API_SUBNET_PROD=apiprod
-API_SUBNET_IPRANGE_DEV=10.1.2.0/24
-API_SUBNET_IPRANGE_PROD=10.2.2.0/24
+API_SUBNET_IPRANGE_DEV=10.2.2.0/24
+API_SUBNET_IPRANGE_PROD=10.3.2.0/24
 
 #Firewall subnet MUST be named AzureFirewallSubnet
 FIREWALL_SUBNET=AzureFirewallSubnet
-FIREWALL_SUBNET_IPRANGE=10.0.0.0/24
+FIREWALL_SUBNET_IPRANGE=10.1.0.0/24
 
 HUB_TO_SPOKE_VNET_PEER_DEV=$(echo $PREFIX)-hub-spoke-peer-dev
 SPOKE_TO_HUB_VNET_PEER_DEV=$(echo $PREFIX)-spoke-hub-peer-dev
 
 HUB_TO_SPOKE_VNET_PEER_PROD=$(echo $PREFIX)-hub-spoke-peer-prod
 SPOKE_TO_HUB_VNET_PEER_PROD=$(echo $PREFIX)-spoke-hub-peer-prod
+
+AZDO_TO_SPOKE_VNET_PEER_DEV=$(echo $PREFIX)-azdo-spoke-peer-dev
+SPOKE_TO_AZDO_VNET_PEER_DEV=$(echo $PREFIX)-spoke-azdo-peer-dev
+
+AZDO_TO_SPOKE_VNET_PEER_PROD=$(echo $PREFIX)-azdo-spoke-peer-prod
+SPOKE_TO_AZDO_VNET_PEER_PROD=$(echo $PREFIX)-spoke-azdo-peer-prod
 
 az group create -n $RG_HUB -l $LOCATION
 az group create -n $RG_SPOKE_DEV -l $LOCATION
@@ -140,7 +146,8 @@ az network vnet subnet update -g $RG_SPOKE_DEV --vnet-name $VNET_SPOKE_DEV --nam
 az network vnet subnet update -g $RG_SPOKE_PROD --vnet-name $VNET_SPOKE_PROD --name $WEB_SUBNET_PROD --route-table $FWROUTE_TABLE_NAME
 az network vnet subnet update -g $RG_SPOKE_PROD --vnet-name $VNET_SPOKE_PROD --name $API_SUBNET_PROD --route-table $FWROUTE_TABLE_NAME
 
-## Azure Deplopyment Agent
+## Azure Deplopyment Agent using quickstart ARM Template
+## Will create VM with Azure Pipelines Agent in a new VNET and register agent to Azure DevOps
 az group create --name $RG_DEVOPSAGENT --location $LOCATION
 az deployment group create -g $RG_DEVOPSAGENT --name agentdeployment \
   --template-uri "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-vm-vsts-agent/azuredeploy.json" \
@@ -154,6 +161,17 @@ az deployment group create -g $RG_DEVOPSAGENT --name agentdeployment \
                 vstsAgentCount=1 \
                 modules="[]" \
                 vstsPoolName=Default
+
+# Get newly created network details (name&id) needed for network peering
+VNET_AZDO=$(az network vnet list -g $RG_DEVOPSAGENT --query "[].name" -o tsv)
+AZDEVOPSID=$(az network vnet show -g $RG_DEVOPSAGENT -n $VNET_AZDO --query id -o tsv)
+
+# Peer network with Azure DevOps agent to dev & prod spokes so pipelines can deploy
+az network vnet peering create -g $RG_DEVOPSAGENT -n $AZDO_TO_SPOKE_VNET_PEER_DEV --vnet-name $VNET_AZDO --remote-vnet $SPOKEID_DEV --allow-vnet-access
+az network vnet peering create -g $RG_DEVOPSAGENT -n $AZDO_TO_SPOKE_VNET_PEER_PROD --vnet-name $VNET_AZDO --remote-vnet $SPOKEID_PROD --allow-vnet-access
+az network vnet peering create -g $RG_SPOKE_DEV -n $SPOKE_TO_AZDO_VNET_PEER_DEV --vnet-name $VNET_SPOKE_DEV --remote-vnet $AZDEVOPSID --allow-vnet-access
+az network vnet peering create -g $RG_SPOKE_PROD -n $SPOKE_TO_AZDO_VNET_PEER_PROD --vnet-name $VNET_SPOKE_PROD --remote-vnet $AZDEVOPSID --allow-vnet-access
+
 
 ###########################################
 # Pre-Prod Spoke
